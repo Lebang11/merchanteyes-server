@@ -4,8 +4,18 @@ const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
 
 const app = express();
-const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
+
+// Singleton Prisma client — critical for Vercel serverless.
+// Without this, each warm-start reuse creates a new client and
+// exhausts Supabase's connection pool (causing 500s after first request).
+const globalForPrisma = global;
+if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient({
+        log: ['error'],
+    });
+}
+const prisma = globalForPrisma.prisma;
 
 app.use(cors());
 app.use(express.json());
